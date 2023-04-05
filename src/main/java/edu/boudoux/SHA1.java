@@ -1,12 +1,9 @@
 package edu.boudoux;
 
-import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
 public class SHA1 {
-
-    private static final long _2_POWER_32 = (long) Math.pow(2, 31);
 
     /**
      * The initial 160bits hash
@@ -29,7 +26,11 @@ public class SHA1 {
     private SHA1() {}
 
     public static String hash(String input) {
-        if (input == null || input.length() == 0) return input;
+        return hash(input.getBytes());
+    }
+
+    public static String hash(byte[] input) {
+        if (input == null) return null;
 
         int[] paddedContent = applyPadding(input);
         int[][] blocks = createBlocks(paddedContent);
@@ -261,14 +262,13 @@ public class SHA1 {
         return padding;
     }
 
-    static int[] applyPadding(String value) {
-        int contentLength = value.length();
+    static int[] applyPadding(byte[] value) {
+        int contentLength = value.length;
         int[] padding = getPaddingBytes(contentLength);
 
         int[] result = new int[contentLength + padding.length];
-        byte[] valueContent = value.getBytes();
         for (int i = 0; i < contentLength; i++)
-            result[i] = valueContent[i];
+            result[i] = value[i];
 
         System.arraycopy(padding, 0, result, contentLength, padding.length);
 
