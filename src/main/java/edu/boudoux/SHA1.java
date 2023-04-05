@@ -1,5 +1,7 @@
 package edu.boudoux;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -16,6 +18,10 @@ public class SHA1 {
             0xc3d2e1f0
     };
 
+    /**
+     * The constants applied in each of the four stages.
+     * Each stage is represented by an index in this array.
+     */
     private static final int[] K = new int[] {
             0x5a827999,
             0x6ed9eba1,
@@ -35,7 +41,15 @@ public class SHA1 {
         int[] paddedContent = applyPadding(input);
         int[][] blocks = createBlocks(paddedContent);
 
-        int[] currentHash = H_0;
+        int[] currentHash = _hashBlocks(blocks, H_0);
+
+        return toString(currentHash);
+    }
+
+    private static int[] _hashBlocks(int[][] blocks, int[] initialHash) {
+        if (blocks == null) return null;
+
+        int[] currentHash = initialHash;
         int[] dividedBlock;
 
         for (int[] block: blocks) {
@@ -43,22 +57,20 @@ public class SHA1 {
             currentHash = processBlock(dividedBlock, currentHash);
         }
 
-        return toString(currentHash);
+        return currentHash;
     }
-/*
+
     public static String hash(File file) throws IOException {
         if (file == null || ! file.exists()) return null;
 
         int[] padding = getPaddingBytes(file.length());
         int[] currentHash = H_0;
-
+        int[][] blocks = new int[1][];
         try (Scanner fileScanner = new Scanner(file)) {
             int[] paddingBlock = null;
             int[] block;
-            int[] dividedBlock;
 
             while ((block = readNextBlock(fileScanner)) != null || paddingBlock != null) {
-
                 // if last block
                 if (block != null && block.length < 64) {
                     // this might produce one additional block
@@ -72,20 +84,14 @@ public class SHA1 {
                     paddingBlock = null;
                 }
 
-                dividedBlock = divideBlock(block);
-                currentHash = processBlock(dividedBlock, currentHash);
+                blocks[0] = block;
+                currentHash = _hashBlocks(blocks, currentHash);
             }
         }
 
-        currentHash[0] = (int) (currentHash[0] + H_0[0] % _2_POWER_32);
-        currentHash[1] = (int) (currentHash[1] + H_0[1] % _2_POWER_32);
-        currentHash[2] = (int) (currentHash[2] + H_0[2] % _2_POWER_32);
-        currentHash[3] = (int) (currentHash[3] + H_0[3] % _2_POWER_32);
-        currentHash[4] = (int) (currentHash[4] + H_0[4] % _2_POWER_32);
-
         return toString(currentHash);
     }
-*/
+
     static String toString(int[] currentHash) {
         return hex32Pad(Integer.toHexString(currentHash[0])) +
                 hex32Pad(Integer.toHexString(currentHash[1])) +

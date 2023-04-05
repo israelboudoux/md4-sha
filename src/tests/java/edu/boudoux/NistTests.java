@@ -5,10 +5,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -70,7 +70,7 @@ public class NistTests {
     @Test
     public void runNistTests() {
         Assert.assertEquals(
-                String.format("Test failed for '%s'", testCase.value),
+                String.format("Hashing message '%s'", Arrays.toString(testCase.value)),
                 testCase.result,
                 SHA1.hash(testCase.value)
         );
