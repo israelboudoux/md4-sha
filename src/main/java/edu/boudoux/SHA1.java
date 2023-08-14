@@ -41,18 +41,6 @@ public class SHA1 {
         return toString(currentHash);
     }
 
-    static String toString(int[] currentHash) {
-        return hex32Pad(Integer.toHexString(currentHash[0])) +
-                hex32Pad(Integer.toHexString(currentHash[1])) +
-                hex32Pad(Integer.toHexString(currentHash[2])) +
-                hex32Pad(Integer.toHexString(currentHash[3])) +
-                hex32Pad(Integer.toHexString(currentHash[4]));
-    }
-
-    static String hex32Pad(String value) {
-        return String.format("%8s", value).replace(" ", "0");
-    }
-
     static int[][] parseMessage(int[] paddedContent) {
         int[][] block = new int[paddedContent.length / 64][64];
 
@@ -96,21 +84,6 @@ public class SHA1 {
         return new int[] {a, b, c, d, e};
     }
 
-    static int rotl(int value, int n) {
-        return value << n | value >>> (32 - n);
-    }
-
-    static int applyF(int b, int c, int d, int stageIndex) {
-        if (stageIndex == 0)
-            return (b & c) ^ (~b & d);
-        else if (stageIndex == 1)
-            return b ^ c ^ d;
-        else if (stageIndex == 2)
-            return (b & c) ^ (b & d) ^ (c & d);
-
-        return b ^ c ^ d;
-    }
-
     static int messageSchedule(int[] dividedBlock, int j, int[] word) {
         if (j < 16)
             return dividedBlock[j];
@@ -124,22 +97,18 @@ public class SHA1 {
         int[] result = new int[16];
 
         for (int mainIndex = 0, blockIndex = 0; mainIndex < 16; mainIndex++, blockIndex += 4) {
-            result[mainIndex] = block[blockIndex];
-            result[mainIndex] <<= 8;
-            result[mainIndex] |= block[blockIndex + 1];
-            result[mainIndex] <<= 8;
-            result[mainIndex] |= block[blockIndex + 2];
-            result[mainIndex] <<= 8;
-            result[mainIndex] |= block[blockIndex + 3];
+            long value = block[blockIndex];
+            value <<= 8;
+            value += block[blockIndex + 1];
+            value <<= 8;
+            value += block[blockIndex + 2];
+            value <<= 8;
+            value += block[blockIndex + 3];
+
+            result[mainIndex] = (int) value;
         }
 
         return result;
-    }
-
-    private static long mod(long value, long modValue) {
-        if (value >= 0) return value % modValue;
-
-        return -(-value % modValue) + modValue;
     }
 
     static int[] getPaddingBytes(long contentLength) {
@@ -183,5 +152,38 @@ public class SHA1 {
         System.arraycopy(padding, 0, result, contentLength, padding.length);
 
         return result;
+    }
+
+    static int rotl(int value, int n) {
+        return value << n | value >>> (32 - n);
+    }
+
+    static int applyF(int b, int c, int d, int stageIndex) {
+        if (stageIndex == 0)
+            return (b & c) ^ (~b & d);
+        else if (stageIndex == 1)
+            return b ^ c ^ d;
+        else if (stageIndex == 2)
+            return (b & c) ^ (b & d) ^ (c & d);
+
+        return b ^ c ^ d;
+    }
+
+    static String toString(int[] currentHash) {
+        return hex32Pad(Integer.toHexString(currentHash[0])) +
+                hex32Pad(Integer.toHexString(currentHash[1])) +
+                hex32Pad(Integer.toHexString(currentHash[2])) +
+                hex32Pad(Integer.toHexString(currentHash[3])) +
+                hex32Pad(Integer.toHexString(currentHash[4]));
+    }
+
+    static String hex32Pad(String value) {
+        return String.format("%8s", value).replace(" ", "0");
+    }
+
+    private static long mod(long value, long modValue) {
+        if (value >= 0) return value % modValue;
+
+        return -(-value % modValue) + modValue;
     }
 }
