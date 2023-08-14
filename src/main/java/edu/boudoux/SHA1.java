@@ -29,6 +29,8 @@ public class SHA1 {
             0xca62c1d6
     };
 
+    private static final long _2power32 = (long) Math.pow(2d, 32d);
+
     private SHA1() {}
 
     public static String hash(String input) {
@@ -146,12 +148,11 @@ public class SHA1 {
             }
         }
 
-        // No mod 2^32 needed at this point, since the int type in Java will overflow accordingly
-        _a = _a + previousHash[0];
-        _b = _b + previousHash[1];
-        _c = _c + previousHash[2];
-        _d = _d + previousHash[3];
-        _e = _e + previousHash[4];
+        _a = (int) mod(((long) _a) + previousHash[0], _2power32);
+        _b = (int) mod(((long) _b) + previousHash[1], _2power32);
+        _c = (int) mod(((long) _c) + previousHash[2], _2power32);
+        _d = (int) mod(((long) _d) + previousHash[3], _2power32);
+        _e = (int) mod(((long) _e) + previousHash[4], _2power32);
 
         return new int[] {_a, _b, _c, _d, _e};
     }
@@ -232,9 +233,6 @@ public class SHA1 {
     private static long mod(long value, long modValue) {
         if (value >= 0) return value % modValue;
 
-        long result = value + modValue;
-        if (result >= 0) return result;
-
         return -(-value % modValue) + modValue;
     }
 
@@ -244,12 +242,14 @@ public class SHA1 {
         int arrSize = (int) (paddingSizeInBits / 8 + (paddingSizeInBits % 8 == 0 ? 0 : 1));
         int[] padding = new int[arrSize];
 
-        // padding = bit 1 + 0 kBits + contentLength 64bits representation
+        assert ((contentLength + padding.length) * 8L) % 512L == 0;
+
+        // padding = bit 1 + 0 kBits + contentLength total bits in 64bits representation
 
         // fill the initial positions: bit 1 + kBits bit 0 (MSB)
         padding[0] = 0x80;
 
-        // fill the 64 (LSB) - contentLength 64bits representation
+        // fill the 64 (LSB) - contentLength total bits in 64bits representation
         int offset = arrSize - 8;
         long bitsInContentLength = contentLength * 8;
         double calc, sum = 0;
