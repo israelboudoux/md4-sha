@@ -88,22 +88,20 @@ public class SHA1 {
         if (j < 16)
             return dividedBlock[j];
 
-        int result = word[j - 3] ^ word[j - 8] ^ word[j - 14] ^ word[j - 16];
-
-        return rotl(result, 1);
+        return rotl(word[j - 3] ^ word[j - 8] ^ word[j - 14] ^ word[j - 16], 1);
     }
 
     static int[] divideBlock(int[] block) {
         int[] result = new int[16];
 
         for (int mainIndex = 0, blockIndex = 0; mainIndex < 16; mainIndex++, blockIndex += 4) {
-            long value = block[blockIndex];
+            long value = block[blockIndex] & 0xff;
             value <<= 8;
-            value += block[blockIndex + 1];
+            value |= block[blockIndex + 1] & 0xff;
             value <<= 8;
-            value += block[blockIndex + 2];
+            value |= block[blockIndex + 2] & 0xff;
             value <<= 8;
-            value += block[blockIndex + 3];
+            value |= block[blockIndex + 3] & 0xff;
 
             result[mainIndex] = (int) value;
         }
