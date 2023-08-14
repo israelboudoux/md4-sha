@@ -24,23 +24,13 @@ public class SHA1 {
             0xca62c1d6
     };
 
-    private static final long _2power32 = (long) Math.pow(2d, 32d);
-
     public static String hash(byte[] input) {
         if (input == null) return null;
 
         int[] paddedContent = applyPadding(input);
-        int[][] blocks = createBlocks(paddedContent);
+        int[][] blocks = parseMessage(paddedContent);
 
-        int[] currentHash = _hashBlocks(blocks, H_0);
-
-        return toString(currentHash);
-    }
-
-    private static int[] _hashBlocks(int[][] blocks, int[] initialHash) {
-        if (blocks == null) return null;
-
-        int[] currentHash = initialHash;
+        int[] currentHash = H_0;
         int[] dividedBlock;
 
         for (int[] block: blocks) {
@@ -48,7 +38,7 @@ public class SHA1 {
             currentHash = processBlock(dividedBlock, currentHash);
         }
 
-        return currentHash;
+        return toString(currentHash);
     }
 
     static String toString(int[] currentHash) {
@@ -63,7 +53,7 @@ public class SHA1 {
         return String.format("%8s", value).replace(" ", "0");
     }
 
-    static int[][] createBlocks(int[] paddedContent) {
+    static int[][] parseMessage(int[] paddedContent) {
         int[][] block = new int[paddedContent.length / 64][64];
 
         for (int i = 0; i < block.length; i++) {
@@ -82,33 +72,28 @@ public class SHA1 {
         int d = previousHash[3];
         int e = previousHash[4];
 
-        int _a = 0, _b = 0, _c = 0, _d = 0, _e = 0;
+        int T;
 
         for (int i = 0; i < 4; i++) {
             for (int j = i * 20; j < 20 + i * 20; j++) {
                 word[j] = messageSchedule(dividedBlock, j, word);
 
-                _a = e + applyF(b, c, d, i) + rotl(a, 5) + word[j] + K[i];
-                _b = a;
-                _c = rotl(b, 30);
-                _d = c;
-                _e = d;
-
-                a = _a;
-                b = _b;
-                c = _c;
-                d = _d;
-                e = _e;
+                T = rotl(a, 5) + applyF(b, c, d, i) + e + K[i] + word[j];
+                e = d;
+                d = c;
+                c = rotl(b, 30);
+                b = a;
+                a = T;
             }
         }
 
-        _a = (int) mod(((long) _a) + previousHash[0], _2power32);
-        _b = (int) mod(((long) _b) + previousHash[1], _2power32);
-        _c = (int) mod(((long) _c) + previousHash[2], _2power32);
-        _d = (int) mod(((long) _d) + previousHash[3], _2power32);
-        _e = (int) mod(((long) _e) + previousHash[4], _2power32);
+        a = a + previousHash[0];
+        b = b + previousHash[1];
+        c = c + previousHash[2];
+        d = d + previousHash[3];
+        e = e + previousHash[4];
 
-        return new int[] {_a, _b, _c, _d, _e};
+        return new int[] {a, b, c, d, e};
     }
 
     static int rotl(int value, int n) {
@@ -118,19 +103,19 @@ public class SHA1 {
     static int applyF(int b, int c, int d, int stageIndex) {
         if (stageIndex == 0)
             return (b & c) ^ (~b & d);
-        else if (stageIndex == 1 || stageIndex == 3)
+        else if (stageIndex == 1)
             return b ^ c ^ d;
         else if (stageIndex == 2)
             return (b & c) ^ (b & d) ^ (c & d);
 
-        throw new IllegalArgumentException("Invalid value for stateIndex");
+        return b ^ c ^ d;
     }
 
     static int messageSchedule(int[] dividedBlock, int j, int[] word) {
         if (j < 16)
             return dividedBlock[j];
 
-        int result = word[j - 16] ^ word[j - 14] ^ word[j - 8] ^ word[j - 3];
+        int result = word[j - 3] ^ word[j - 8] ^ word[j - 14] ^ word[j - 16];
 
         return rotl(result, 1);
     }
@@ -162,8 +147,6 @@ public class SHA1 {
         long paddingSizeInBits = 1 + kBits + 64;
         int arrSize = (int) (paddingSizeInBits / 8 + (paddingSizeInBits % 8 == 0 ? 0 : 1));
         int[] padding = new int[arrSize];
-
-        assert ((contentLength + padding.length) * 8L) % 512L == 0;
 
         // padding = bit 1 + 0 kBits + contentLength total bits in 64bits representation
 
