@@ -1,10 +1,5 @@
 package edu.boudoux;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Scanner;
-
 public class SHA1 {
 
     /**
@@ -31,12 +26,6 @@ public class SHA1 {
 
     private static final long _2power32 = (long) Math.pow(2d, 32d);
 
-    private SHA1() {}
-
-    public static String hash(String input) {
-        return hash(input.getBytes());
-    }
-
     public static String hash(byte[] input) {
         if (input == null) return null;
 
@@ -62,38 +51,6 @@ public class SHA1 {
         return currentHash;
     }
 
-    public static String hash(File file) throws IOException {
-        if (file == null || ! file.exists()) return null;
-
-        int[] padding = getPaddingBytes(file.length());
-        int[] currentHash = H_0;
-        int[][] blocks = new int[1][];
-        try (Scanner fileScanner = new Scanner(file)) {
-            int[] paddingBlock = null;
-            int[] block;
-
-            while ((block = readNextBlock(fileScanner)) != null || paddingBlock != null) {
-                // if last block
-                if (block != null && block.length < 64) {
-                    // this might produce one additional block
-                    int[][] joiningBlock = joinPadding(block, padding);
-
-                    block = joiningBlock[0];
-                    paddingBlock = joiningBlock[1];
-
-                } else if (paddingBlock != null) {
-                    block = paddingBlock;
-                    paddingBlock = null;
-                }
-
-                blocks[0] = block;
-                currentHash = _hashBlocks(blocks, currentHash);
-            }
-        }
-
-        return toString(currentHash);
-    }
-
     static String toString(int[] currentHash) {
         return hex32Pad(Integer.toHexString(currentHash[0])) +
                 hex32Pad(Integer.toHexString(currentHash[1])) +
@@ -116,9 +73,6 @@ public class SHA1 {
         return block;
     }
 
-    /**
-     *
-     */
     static int[] processBlock(int[] dividedBlock, int[] previousHash) {
         int[] word = new int[80];
 
@@ -134,9 +88,9 @@ public class SHA1 {
             for (int j = i * 20; j < 20 + i * 20; j++) {
                 word[j] = messageSchedule(dividedBlock, j, word);
 
-                _a = e + applyF(b, c, d, i) + (a << 5 | a >>> 27) + word[j] + K[i];
+                _a = e + applyF(b, c, d, i) + rotl(a, 5) + word[j] + K[i];
                 _b = a;
-                _c = b << 30 | b >>> 2;
+                _c = rotl(b, 30);
                 _d = c;
                 _e = d;
 
@@ -157,6 +111,10 @@ public class SHA1 {
         return new int[] {_a, _b, _c, _d, _e};
     }
 
+    static int rotl(int value, int n) {
+        return value << n | value >>> (32 - n);
+    }
+
     static int applyF(int b, int c, int d, int stageIndex) {
         if (stageIndex == 0)
             return (b & c) | (~b & d);
@@ -174,7 +132,7 @@ public class SHA1 {
 
         int result = word[j - 16] ^ word[j - 14] ^ word[j - 8] ^ word[j - 3];
 
-        return result << 1 | result >>> 31;
+        return rotl(result, 1);
     }
 
     static int[] divideBlock(int[] block) {
@@ -191,43 +149,6 @@ public class SHA1 {
         }
 
         return result;
-    }
-
-    static int[][] joinPadding(int[] block, int[] padding) {
-        int arrSize = 1;
-
-        if (block.length + padding.length > 64) {
-            arrSize = 2;
-        }
-
-        int[][] result = new int[arrSize][64];
-
-        System.arraycopy(block, 0, result[0], 0, block.length);
-        System.arraycopy(padding, 0, result[0], block.length, 64 - block.length);
-
-        if (arrSize > 1) {
-            System.arraycopy(padding, 64 - block.length, result[1], 0, 64);
-        }
-
-        return result;
-    }
-
-    /**
-     * Reads a block from the file.
-     *
-     * @param fileScanner
-     * @return an array of at maximum 64 positions (512 bits).
-     */
-    static int[] readNextBlock(Scanner fileScanner) {
-        if (! fileScanner.hasNext()) return null;
-
-        int[] block = new int[64];
-        int index = 0;
-        do {
-            block[index++] = fileScanner.nextByte();
-        } while (index != 64 && fileScanner.hasNext());
-
-        return index == 64 ? block : Arrays.copyOfRange(block, 0, index);
     }
 
     private static long mod(long value, long modValue) {
