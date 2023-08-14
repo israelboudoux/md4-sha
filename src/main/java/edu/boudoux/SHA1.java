@@ -117,11 +117,11 @@ public class SHA1 {
 
     static int applyF(int b, int c, int d, int stageIndex) {
         if (stageIndex == 0)
-            return (b & c) | (~b & d);
+            return (b & c) ^ (~b & d);
         else if (stageIndex == 1 || stageIndex == 3)
             return b ^ c ^ d;
         else if (stageIndex == 2)
-            return (b & c) | (b & d) | (c & d);
+            return (b & c) ^ (b & d) ^ (c & d);
 
         throw new IllegalArgumentException("Invalid value for stateIndex");
     }
