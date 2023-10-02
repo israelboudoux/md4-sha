@@ -182,6 +182,6 @@ public class SHA1 {
     private static long mod(long value, long modValue) {
         if (value >= 0) return value % modValue;
 
-        return -(-value % modValue) + modValue;
+        return (-(-value % modValue) + modValue) % modValue;
     }
 }

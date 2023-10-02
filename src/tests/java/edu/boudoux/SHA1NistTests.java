@@ -14,11 +14,11 @@ import java.util.Collection;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class NistTests {
+public class SHA1NistTests {
 
     private final TestCase testCase;
 
-    public NistTests (TestCase testCase) {
+    public SHA1NistTests(TestCase testCase) {
         this.testCase = testCase;
     }
 
@@ -74,7 +74,7 @@ public class NistTests {
     }
 
     private static Collection<? extends TestCase> readTestCases(String filePath) throws Exception {
-        List<String> contentList = Files.readAllLines(Path.of(NistTests.class.getResource(filePath).toURI()));
+        List<String> contentList = Files.readAllLines(Path.of(SHA1NistTests.class.getResource(filePath).toURI()));
         List<TestCase> result = new ArrayList<>();
 
         for(int i = 0; i < contentList.size(); i++) {
